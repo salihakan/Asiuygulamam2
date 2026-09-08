@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/dialog_tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/add_measurement"
+        android:textColor="@color/text_primary_light"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Kilo ve boy değerlerini girerek vücut kitle indeksinizi takip edin."
+        android:textColor="@color/text_secondary_light"
+        android:textSize="13sp" />
+
+    <!-- Date Selection Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/dialog_btn_date"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="start|center_vertical"
+        android:text="Tarih: 7 Eylül 2026"
+        app:icon="@drawable/ic_tab_today"
+        app:iconGravity="textStart"
+        app:iconTint="@color/primary" />
+
+    <!-- Weight Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/dialog_til_weight"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="@string/weight_label"
+        app:suffixText="kg">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/dialog_et_weight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Height Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/dialog_til_height"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="@string/height_label"
+        app:suffixText="cm">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/dialog_et_height"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- BMI Preview Card -->
+    <LinearLayout
+        android:id="@+id/dialog_bmi_preview_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_limb_active"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Hesaplanan VKİ:"
+            android:textColor="@color/primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/dialog_tv_bmi_result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="23.5 (Normal)"
+            android:textColor="@color/primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

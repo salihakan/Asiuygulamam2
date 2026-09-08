@@ -1,0 +1,87 @@
+<resources>
+    <string name="app_name">Enjeksiyon Takip</string>
+    <string name="tab_today">Bugün</string>
+    <string name="tab_measurements">Ölçümler</string>
+    <string name="tab_history">Geçmiş</string>
+    <string name="tab_settings">Ayarlar</string>
+
+    <!-- Today Screen -->
+    <string name="title_today">Bugünün Enjeksiyonu</string>
+    <string name="today_hero_subtitle">Günlük doz ve uzuv rotasyonu</string>
+    <string name="dose_unit_format">%.1f ünite</string>
+    <string name="target_limb_label">Uygulanacak Uzuv</string>
+    <string name="dose_label">Günlük Doz</string>
+    <string name="mark_completed">Yapıldı Olarak İşaretle</string>
+    <string name="marked_completed">Bugün Tamamlandı ✓</string>
+    <string name="undo_mark">Geri Al</string>
+    <string name="tomorrow_preview_title">Yarının Enjeksiyonu</string>
+    <string name="streak_format">%d Günlük Seri 🔥</string>
+    <string name="status_pending">Bugün henüz uygulanmadı</string>
+    <string name="status_done">Bugünkü doz başarıyla kaydedildi</string>
+    <string name="status_completed">Bugünkü doz başarıyla kaydedildi</string>
+
+    <!-- Limbs -->
+    <string name="limb_right_arm">Sağ Kol</string>
+    <string name="limb_right_leg">Sağ Bacak</string>
+    <string name="limb_left_arm">Sol Kol</string>
+    <string name="limb_left_leg">Sol Bacak</string>
+
+    <!-- Measurements Screen -->
+    <string name="measurements_title">Kilo ve Boy Takibi</string>
+    <string name="measurements_subtitle">Vücut kitle indeksi (VKİ) ve gelişim</string>
+    <string name="add_measurement">Yeni Ölçüm Ekle</string>
+    <string name="edit_measurement">Ölçümü Düzenle</string>
+    <string name="delete_measurement">Ölçümü Sil</string>
+    <string name="weight_label">Kilo (kg)</string>
+    <string name="height_label">Boy (cm)</string>
+    <string name="date_label">Tarih</string>
+    <string name="bmi_label">Vücut Kitle İndeksi</string>
+    <string name="bmi_underweight">Zayıf (&lt; 18.5)</string>
+    <string name="bmi_normal">Normal (18.5 - 24.9)</string>
+    <string name="bmi_overweight">Fazla Kilolu (25 - 29.9)</string>
+    <string name="bmi_obese">Obezite (≥ 30)</string>
+    <string name="no_measurements_yet">Henüz ölçüm kaydı bulunmuyor. Yeni kayıt eklemek için + butonuna dokunun.</string>
+    <string name="weight_chart_title">Kilo Değişim Grafiği</string>
+
+    <!-- History Screen -->
+    <string name="history_title">Enjeksiyon Geçmişi</string>
+    <string name="history_subtitle">Tamamlanan ve atlanan günler</string>
+    <string name="history_total_done">Tamamlanan</string>
+    <string name="history_streak">Mevcut Seri</string>
+    <string name="history_success_rate">Başarı Oranı</string>
+    <string name="view_mode_list">Liste</string>
+    <string name="view_mode_calendar">Takvim / Ay</string>
+    <string name="no_history_yet">Henüz geçmiş enjeksiyon kaydı yok.</string>
+    <string name="status_completed_tag">Yapıldı</string>
+    <string name="status_missed_tag">Atlandı</string>
+    <string name="status_pending_tag">Bekliyor</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_theme_section">Görünüm ve Tema</string>
+    <string name="theme_system">Sistem Varsayılanı</string>
+    <string name="theme_light">Aydınlık Tema</string>
+    <string name="theme_dark">Karanlık Tema</string>
+    <string name="settings_notification_section">Hatırlatma Bildirimi</string>
+    <string name="notification_enable">Günlük Hatırlatıcı</string>
+    <string name="notification_enable_desc">Her gün belirlenen saatte doz ve uzuv bildirimi gönderir.</string>
+    <string name="notification_time">Hatırlatma Saati</string>
+    <string name="notification_test_btn">Test Bildirimi Gönder</string>
+    <string name="settings_rotation_section">Döngü Başlangıcı</string>
+    <string name="settings_rotation_desc">Sayım başlangıç günü ve başlangıç uzvu</string>
+    <string name="settings_data_section">Veri Yönetimi</string>
+    <string name="btn_sample_data">Örnek Veri Yükle</string>
+    <string name="btn_clear_data">Tüm Verileri Temizle</string>
+    <string name="confirm_clear_title">Veriler Silinsin mi?</string>
+    <string name="confirm_clear_msg">Tüm enjeksiyon geçmişi ve ölçümler kalıcı olarak silinecek.</string>
+
+    <!-- Common -->
+    <string name="save">Kaydet</string>
+    <string name="cancel">İptal</string>
+    <string name="delete">Sil</string>
+    <string name="edit">Düzenle</string>
+    <string name="success_saved">Başarıyla kaydedildi</string>
+    <string name="notification_title">Enjeksiyon Vakti 💉</string>
+    <string name="notification_body_format">Bugün %s ünite — %s</string>
+    <string name="widget_title">Enjeksiyon Takip</string>
+</resources>
