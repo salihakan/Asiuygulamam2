@@ -1,6 +1,6 @@
 {
   "name": "Enjeksiyon Takip",
-  "description": "Mobil enjeksiyon ve aşı takip uygulaması, doz ve uzuv rotasyonu, widget ve hatırlatıcı desteği.",
+  "description": "Mobil enjeksiyon ve büyüme persentili takip uygulaması, doz ve uzuv rotasyonu, tam ekran sesli alarm mekanizması ve DSÖ büyüme eğrileri desteği.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

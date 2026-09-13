@@ -49,11 +49,19 @@ public class MeasurementAdapter extends RecyclerView.Adapter<MeasurementAdapter.
         holder.tvWeight.setText(String.format(Locale.US, "%.1f", record.getWeightKg()));
         holder.tvDate.setText(record.getFormattedDate());
 
+        com.example.data.DataManager dm = com.example.data.DataManager.getInstance(holder.itemView.getContext());
+        com.example.model.UserSettings settings = dm.getSettings();
+        float age = com.example.util.DoseCalculator.calculateDecimalAge(settings.getChildBirthDateKey(), record.getDateKey());
+        boolean isMale = !"FEMALE".equalsIgnoreCase(settings.getChildGender());
+        int pHeight = com.example.util.PercentileCalculator.calculatePercentile(record.getHeightCm(), age, isMale, true);
+        int pWeight = com.example.util.PercentileCalculator.calculatePercentile(record.getWeightKg(), age, isMale, false);
+
         String details = String.format(Locale.getDefault(),
-                "Boy: %.0f cm • VKİ: %.1f (%s)",
+                "Boy: %.0f cm (%%%dP) • Kilo: %%%dP • Yaş: %.1f",
                 record.getHeightCm(),
-                record.getBmi(),
-                record.getBmiCategoryLabel());
+                pHeight,
+                pWeight,
+                age);
         holder.tvHeightBmi.setText(details);
 
         holder.btnEdit.setOnClickListener(v -> {

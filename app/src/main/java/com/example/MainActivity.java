@@ -2,6 +2,7 @@ package com.example;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
@@ -10,7 +11,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,7 +19,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -28,28 +27,27 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.data.DataManager;
 import com.example.model.InjectionPlan;
-import com.example.model.InjectionRecord;
 import com.example.model.Limb;
 import com.example.model.MeasurementRecord;
 import com.example.model.UserSettings;
-import com.example.ui.HistoryAdapter;
+import com.example.ui.InteractiveBodyMapView;
 import com.example.ui.MeasurementAdapter;
-import com.example.ui.WeightChartView;
+import com.example.ui.PercentileChartView;
+import com.example.util.AlarmScheduler;
 import com.example.util.DoseCalculator;
 import com.example.util.NotificationHelper;
+import com.example.util.PercentileCalculator;
 import com.example.widget.InjectionAppWidgetProvider;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -62,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
     // Tab Views
     private View tabViewToday;
     private View tabViewMeasurements;
-    private View tabViewHistory;
     private View tabViewSettings;
 
     // Header elements
@@ -83,6 +80,11 @@ public class MainActivity extends AppCompatActivity {
     private MaterialButton btnUndoCompleted;
     private TextView tvActiveLimbBadge;
     private TextView tvSpotlightLabel;
+    private InteractiveBodyMapView bodyMapView;
+    private View layoutLimbOverrideAction;
+    private TextView tvLimbInspectHint;
+    private MaterialButton btnSetAsTodayLimb;
+    private MaterialButton btnResetToTodayLimb;
     private LinearLayout limbPillRightArm;
     private LinearLayout limbPillRightLeg;
     private LinearLayout limbPillLeftArm;
@@ -90,33 +92,47 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivTomorrowIcon;
     private TextView tvTomorrowInfo;
 
-    // Measurements Tab elements
+    // Next Injection Alarm Card Elements (Today Tab)
+    private MaterialSwitch switchTodayAlarm;
+    private TextView tvNextAlarmStatusDesc;
+    private TextView tvTodayAlarmTimeDisplay;
+    private TextView tvTodayAlarmTargetInfo;
+    private MaterialButton btnChangeTodayAlarmTime;
+    private MaterialButton btnTestAlarmDirect;
+
+    // Child Profile & Percentile Tab Elements
+    private MaterialButtonToggleGroup toggleGroupGender;
+    private MaterialButton btnGenderMale;
+    private MaterialButton btnGenderFemale;
+    private TextView tvChildBirthdateVal;
+    private TextView tvChildAgeCalculated;
+    private MaterialButton btnChangeBirthdate;
+
+    private MaterialButtonToggleGroup toggleChartType;
+    private MaterialButton btnChartHeight;
+    private MaterialButton btnChartWeight;
+    private TextView tvChartReferenceSubtitle;
+    private PercentileChartView chartPercentile;
+    private TextView tvPercentileStatusText;
+
     private TextView tvCurrentBmi;
     private TextView tvBmiCategoryPill;
     private TextView tvSummaryWeight;
     private TextView tvSummaryHeight;
-    private WeightChartView chartWeight;
     private RecyclerView rvMeasurements;
     private TextView tvNoMeasurements;
     private TextView tvMeasurementCount;
     private ExtendedFloatingActionButton fabAddMeasurement;
     private MeasurementAdapter measurementAdapter;
-
-    // History Tab elements
-    private TextView tvHistoryStreak;
-    private TextView tvHistoryTotalDone;
-    private TextView tvHistoryRate;
-    private ChipGroup chipgroupHistoryFilter;
-    private RecyclerView rvHistory;
-    private HistoryAdapter historyAdapter;
-    private int historyDaysFilter = 14;
+    private boolean isPercentileHeightMode = true;
 
     // Settings Tab elements
     private RadioGroup rgTheme;
-    private MaterialSwitch switchReminder;
-    private TextView tvReminderTimeVal;
-    private MaterialButton btnChangeTime;
-    private MaterialButton btnTestNotification;
+    private MaterialSwitch switchAlarm;
+    private TextView tvAlarmTimeVal;
+    private MaterialButton btnChangeAlarmTime;
+    private MaterialSwitch switchAlarmVibrate;
+    private MaterialButton btnTestAlarm;
     private MaterialButton btnChangeStartDate;
     private MaterialButton btnLoadSample;
     private MaterialButton btnClearData;
@@ -125,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
+                    AlarmScheduler.scheduleNextAlarm(this);
                     NotificationHelper.scheduleDailyReminder(this);
                 }
             });
@@ -143,12 +160,14 @@ public class MainActivity extends AppCompatActivity {
         setupBottomNav();
         setupTodayTab();
         setupMeasurementsTab();
-        setupHistoryTab();
         setupSettingsTab();
 
         // Notification channel and permission check
         NotificationHelper.createNotificationChannel(this);
-        checkNotificationPermissionAndSchedule();
+        checkPermissionsAndSchedule();
+
+        // Initial schedule of the injection alarm
+        AlarmScheduler.scheduleNextAlarm(this);
 
         // Load today's tab data
         refreshAllData();
@@ -168,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void checkNotificationPermissionAndSchedule() {
+    private void checkPermissionsAndSchedule() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -176,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
+        AlarmScheduler.scheduleNextAlarm(this);
         NotificationHelper.scheduleDailyReminder(this);
     }
 
@@ -186,7 +206,6 @@ public class MainActivity extends AppCompatActivity {
 
         tabViewToday = findViewById(R.id.tab_view_today);
         tabViewMeasurements = findViewById(R.id.tab_view_measurements);
-        tabViewHistory = findViewById(R.id.tab_view_history);
         tabViewSettings = findViewById(R.id.tab_view_settings);
 
         // Today views
@@ -203,6 +222,11 @@ public class MainActivity extends AppCompatActivity {
         btnUndoCompleted = findViewById(R.id.btn_undo_completed);
         tvActiveLimbBadge = findViewById(R.id.tv_active_limb_badge);
         tvSpotlightLabel = findViewById(R.id.tv_spotlight_label);
+        bodyMapView = findViewById(R.id.body_map_view);
+        layoutLimbOverrideAction = findViewById(R.id.layout_limb_override_action);
+        tvLimbInspectHint = findViewById(R.id.tv_limb_inspect_hint);
+        btnSetAsTodayLimb = findViewById(R.id.btn_set_as_today_limb);
+        btnResetToTodayLimb = findViewById(R.id.btn_reset_to_today_limb);
         limbPillRightArm = findViewById(R.id.limb_pill_right_arm);
         limbPillRightLeg = findViewById(R.id.limb_pill_right_leg);
         limbPillLeftArm = findViewById(R.id.limb_pill_left_arm);
@@ -210,30 +234,45 @@ public class MainActivity extends AppCompatActivity {
         ivTomorrowIcon = findViewById(R.id.iv_tomorrow_icon);
         tvTomorrowInfo = findViewById(R.id.tv_tomorrow_info);
 
-        // Measurements views
+        // Next Injection Alarm Card views (Today Tab)
+        switchTodayAlarm = findViewById(R.id.switch_today_alarm);
+        tvNextAlarmStatusDesc = findViewById(R.id.tv_next_alarm_status_desc);
+        tvTodayAlarmTimeDisplay = findViewById(R.id.tv_today_alarm_time_display);
+        tvTodayAlarmTargetInfo = findViewById(R.id.tv_today_alarm_target_info);
+        btnChangeTodayAlarmTime = findViewById(R.id.btn_change_today_alarm_time);
+        btnTestAlarmDirect = findViewById(R.id.btn_test_alarm_direct);
+
+        // Child Profile & Percentile views
+        toggleGroupGender = findViewById(R.id.toggle_group_gender);
+        btnGenderMale = findViewById(R.id.btn_gender_male);
+        btnGenderFemale = findViewById(R.id.btn_gender_female);
+        tvChildBirthdateVal = findViewById(R.id.tv_child_birthdate_val);
+        tvChildAgeCalculated = findViewById(R.id.tv_child_age_calculated);
+        btnChangeBirthdate = findViewById(R.id.btn_change_birthdate);
+
+        toggleChartType = findViewById(R.id.toggle_chart_type);
+        btnChartHeight = findViewById(R.id.btn_chart_height);
+        btnChartWeight = findViewById(R.id.btn_chart_weight);
+        tvChartReferenceSubtitle = findViewById(R.id.tv_chart_reference_subtitle);
+        chartPercentile = findViewById(R.id.chart_percentile);
+        tvPercentileStatusText = findViewById(R.id.tv_percentile_status_text);
+
         tvCurrentBmi = findViewById(R.id.tv_current_bmi);
         tvBmiCategoryPill = findViewById(R.id.tv_bmi_category_pill);
         tvSummaryWeight = findViewById(R.id.tv_summary_weight);
         tvSummaryHeight = findViewById(R.id.tv_summary_height);
-        chartWeight = findViewById(R.id.chart_weight);
         rvMeasurements = findViewById(R.id.rv_measurements);
         tvNoMeasurements = findViewById(R.id.tv_no_measurements);
         tvMeasurementCount = findViewById(R.id.tv_measurement_count);
         fabAddMeasurement = findViewById(R.id.fab_add_measurement);
 
-        // History views
-        tvHistoryStreak = findViewById(R.id.tv_history_streak);
-        tvHistoryTotalDone = findViewById(R.id.tv_history_total_done);
-        tvHistoryRate = findViewById(R.id.tv_history_rate);
-        chipgroupHistoryFilter = findViewById(R.id.chipgroup_history_filter);
-        rvHistory = findViewById(R.id.rv_history);
-
         // Settings views
         rgTheme = findViewById(R.id.rg_theme);
-        switchReminder = findViewById(R.id.switch_reminder);
-        tvReminderTimeVal = findViewById(R.id.tv_reminder_time_val);
-        btnChangeTime = findViewById(R.id.btn_change_time);
-        btnTestNotification = findViewById(R.id.btn_test_notification);
+        switchAlarm = findViewById(R.id.switch_alarm);
+        tvAlarmTimeVal = findViewById(R.id.tv_alarm_time_val);
+        btnChangeAlarmTime = findViewById(R.id.btn_change_alarm_time);
+        switchAlarmVibrate = findViewById(R.id.switch_alarm_vibrate);
+        btnTestAlarm = findViewById(R.id.btn_test_alarm);
         btnChangeStartDate = findViewById(R.id.btn_change_start_date);
         btnLoadSample = findViewById(R.id.btn_load_sample);
         btnClearData = findViewById(R.id.btn_clear_data);
@@ -244,7 +283,6 @@ public class MainActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             tabViewToday.setVisibility(View.GONE);
             tabViewMeasurements.setVisibility(View.GONE);
-            tabViewHistory.setVisibility(View.GONE);
             tabViewSettings.setVisibility(View.GONE);
 
             if (itemId == R.id.nav_today) {
@@ -256,11 +294,6 @@ public class MainActivity extends AppCompatActivity {
                 tabViewMeasurements.setVisibility(View.VISIBLE);
                 toolbarSubtitle.setText(R.string.tab_measurements);
                 refreshMeasurementsTab();
-                return true;
-            } else if (itemId == R.id.nav_history) {
-                tabViewHistory.setVisibility(View.VISIBLE);
-                toolbarSubtitle.setText(R.string.tab_history);
-                refreshHistoryTab();
                 return true;
             } else if (itemId == R.id.nav_settings) {
                 tabViewSettings.setVisibility(View.VISIBLE);
@@ -276,6 +309,7 @@ public class MainActivity extends AppCompatActivity {
         btnMarkCompleted.setOnClickListener(v -> {
             dataManager.setInjectionCompleted(Calendar.getInstance(), true);
             InjectionAppWidgetProvider.updateAllWidgets(this);
+            AlarmScheduler.scheduleNextAlarm(this);
             refreshAllData();
             Snackbar.make(btnMarkCompleted, "Bugünkü enjeksiyon tamamlandı olarak işaretlendi ✓", Snackbar.LENGTH_SHORT).show();
         });
@@ -283,9 +317,149 @@ public class MainActivity extends AppCompatActivity {
         btnUndoCompleted.setOnClickListener(v -> {
             dataManager.setInjectionCompleted(Calendar.getInstance(), false);
             InjectionAppWidgetProvider.updateAllWidgets(this);
+            AlarmScheduler.scheduleNextAlarm(this);
             refreshAllData();
             Snackbar.make(btnUndoCompleted, "Bugünkü işaretleme geri alındı.", Snackbar.LENGTH_SHORT).show();
         });
+
+        // Interactive Body Map Tap Listener
+        if (bodyMapView != null) {
+            bodyMapView.setOnLimbSelectedListener((limb, isTodayScheduled) -> {
+                onLimbInspected(limb);
+            });
+        }
+
+        // Interactive Limb 4-Pills Click Listeners
+        if (limbPillRightArm != null) {
+            limbPillRightArm.setOnClickListener(v -> {
+                animatePillClick(limbPillRightArm);
+                if (bodyMapView != null) bodyMapView.setSelectedLimb(Limb.RIGHT_ARM, true);
+                onLimbInspected(Limb.RIGHT_ARM);
+            });
+        }
+        if (limbPillRightLeg != null) {
+            limbPillRightLeg.setOnClickListener(v -> {
+                animatePillClick(limbPillRightLeg);
+                if (bodyMapView != null) bodyMapView.setSelectedLimb(Limb.RIGHT_LEG, true);
+                onLimbInspected(Limb.RIGHT_LEG);
+            });
+        }
+        if (limbPillLeftArm != null) {
+            limbPillLeftArm.setOnClickListener(v -> {
+                animatePillClick(limbPillLeftArm);
+                if (bodyMapView != null) bodyMapView.setSelectedLimb(Limb.LEFT_ARM, true);
+                onLimbInspected(Limb.LEFT_ARM);
+            });
+        }
+        if (limbPillLeftLeg != null) {
+            limbPillLeftLeg.setOnClickListener(v -> {
+                animatePillClick(limbPillLeftLeg);
+                if (bodyMapView != null) bodyMapView.setSelectedLimb(Limb.LEFT_LEG, true);
+                onLimbInspected(Limb.LEFT_LEG);
+            });
+        }
+
+        // Action to switch today's limb to the inspected one
+        if (btnSetAsTodayLimb != null) {
+            btnSetAsTodayLimb.setOnClickListener(v -> {
+                if (bodyMapView == null) return;
+                Limb targetLimb = bodyMapView.getSelectedLimb();
+                dataManager.setTodayLimbOverride(targetLimb);
+                InjectionAppWidgetProvider.updateAllWidgets(this);
+                refreshAllData();
+                Snackbar.make(btnSetAsTodayLimb, "Bugünkü enjeksiyon uzvu " + targetLimb.getLocalizedName(this) + " olarak ayarlandı.", Snackbar.LENGTH_SHORT).show();
+            });
+        }
+
+        // Action to revert back to today's scheduled limb
+        if (btnResetToTodayLimb != null) {
+            btnResetToTodayLimb.setOnClickListener(v -> {
+                InjectionPlan today = dataManager.getTodayPlan();
+                if (bodyMapView != null) {
+                    bodyMapView.setSelectedLimb(today.getLimb(), true);
+                }
+                onLimbInspected(today.getLimb());
+            });
+        }
+
+        // Today Next Injection Alarm controls
+        if (switchTodayAlarm != null) {
+            UserSettings settings = dataManager.getSettings();
+            switchTodayAlarm.setChecked(settings.isAlarmEnabled());
+            switchTodayAlarm.setOnCheckedChangeListener((bv, isChecked) -> {
+                UserSettings s = dataManager.getSettings();
+                s.setAlarmEnabled(isChecked);
+                dataManager.saveSettings(s);
+                AlarmScheduler.scheduleNextAlarm(this);
+                refreshTodayAlarmCard();
+                if (switchAlarm != null) switchAlarm.setChecked(isChecked);
+                String msg = isChecked ? "Enjeksiyon alarmı açıldı." : "Enjeksiyon alarmı kapatıldı.";
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        if (btnChangeTodayAlarmTime != null) {
+            btnChangeTodayAlarmTime.setOnClickListener(v -> {
+                UserSettings s = dataManager.getSettings();
+                TimePickerDialog tpd = new TimePickerDialog(
+                        this,
+                        (view, hourOfDay, minute) -> {
+                            s.setAlarmHour(hourOfDay);
+                            s.setAlarmMinute(minute);
+                            dataManager.saveSettings(s);
+                            AlarmScheduler.scheduleNextAlarm(this);
+                            refreshTodayAlarmCard();
+                            if (tvAlarmTimeVal != null) tvAlarmTimeVal.setText(s.getFormattedAlarmTime());
+                            Toast.makeText(this, "Alarm saati " + s.getFormattedAlarmTime() + " olarak ayarlandı.", Toast.LENGTH_SHORT).show();
+                        },
+                        s.getAlarmHour(),
+                        s.getAlarmMinute(),
+                        true
+                );
+                tpd.show();
+            });
+        }
+
+        if (btnTestAlarmDirect != null) {
+            btnTestAlarmDirect.setOnClickListener(v -> {
+                Intent alarmIntent = new Intent(this, AlarmActivity.class);
+                alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(alarmIntent);
+            });
+        }
+    }
+
+    private void animatePillClick(View pill) {
+        if (pill == null) return;
+        pill.animate()
+                .scaleX(1.12f)
+                .scaleY(1.12f)
+                .setDuration(120)
+                .withEndAction(() -> pill.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start())
+                .start();
+    }
+
+    private void onLimbInspected(Limb limb) {
+        if (limb == null) return;
+        InjectionPlan today = dataManager.getTodayPlan();
+        boolean isTodayLimb = (limb == today.getLimb());
+
+        updateLimbPills(limb);
+
+        if (isTodayLimb) {
+            if (layoutLimbOverrideAction != null) layoutLimbOverrideAction.setVisibility(View.GONE);
+            if (tvSpotlightLabel != null) {
+                tvSpotlightLabel.setText(today.isCompleted() ? "Tamamlandı: " + limb.getLocalizedName(this) : "Bugün: " + limb.getLocalizedName(this));
+            }
+        } else {
+            if (layoutLimbOverrideAction != null) layoutLimbOverrideAction.setVisibility(View.VISIBLE);
+            if (tvLimbInspectHint != null) {
+                tvLimbInspectHint.setText("Seçilen: " + limb.getLocalizedName(this) + " (" + (limb.getIndex() + 1) + ". Sıra)");
+            }
+            if (tvSpotlightLabel != null) {
+                tvSpotlightLabel.setText("İncelenen: " + limb.getLocalizedName(this));
+            }
+        }
     }
 
     private void refreshTodayTab() {
@@ -306,7 +480,16 @@ public class MainActivity extends AppCompatActivity {
         tvTodayLimb.setText(limbName);
         ivTodayLimbIcon.setImageResource(limb.getIconResId());
         tvActiveLimbBadge.setText(limbName);
-        tvSpotlightLabel.setText("Bugün: " + limbName);
+        tvSpotlightLabel.setText(today.isCompleted() ? "Tamamlandı: " + limbName : "Bugün: " + limbName);
+
+        // Update animated body map
+        if (bodyMapView != null) {
+            bodyMapView.setCompleted(today.isCompleted());
+            bodyMapView.setTodayLimb(limb);
+        }
+        if (layoutLimbOverrideAction != null) {
+            layoutLimbOverrideAction.setVisibility(View.GONE);
+        }
 
         // Update Limb 4-Pills Highlight
         updateLimbPills(limb);
@@ -346,6 +529,9 @@ public class MainActivity extends AppCompatActivity {
             btnUndoCompleted.setVisibility(View.GONE);
         }
 
+        // Refresh Next Alarm Card
+        refreshTodayAlarmCard();
+
         // Tomorrow preview
         String tomorrowDose = tomorrow.getFormattedDose();
         String tomorrowLimb = tomorrow.getLimb().getLocalizedName(this);
@@ -355,6 +541,35 @@ public class MainActivity extends AppCompatActivity {
         // Header streak
         int streak = dataManager.calculateStreak();
         toolbarTvStreak.setText(streak + " Gün");
+    }
+
+    private void refreshTodayAlarmCard() {
+        UserSettings settings = dataManager.getSettings();
+        InjectionPlan today = dataManager.getTodayPlan();
+        InjectionPlan tomorrow = dataManager.getTomorrowPlan();
+
+        if (switchTodayAlarm != null) {
+            switchTodayAlarm.setChecked(settings.isAlarmEnabled());
+        }
+
+        if (tvTodayAlarmTimeDisplay != null) {
+            tvTodayAlarmTimeDisplay.setText(AlarmScheduler.getNextAlarmDescription(this));
+        }
+
+        if (tvTodayAlarmTargetInfo != null) {
+            boolean isScheduledForToday = !today.isCompleted();
+            InjectionPlan targetPlan = isScheduledForToday ? today : tomorrow;
+            String dayLabel = isScheduledForToday ? "Bugün" : "Yarın";
+            tvTodayAlarmTargetInfo.setText(targetPlan.getFormattedDose() + " • " + targetPlan.getLimb().getLocalizedName(this) + " (" + dayLabel + ")");
+        }
+
+        if (tvNextAlarmStatusDesc != null) {
+            if (settings.isAlarmEnabled()) {
+                tvNextAlarmStatusDesc.setText("Belirlenen saatte tam ekran sesli alarm çalacaktır");
+            } else {
+                tvNextAlarmStatusDesc.setText("Alarm kapalı — bildirim veya ses çalmaz");
+            }
+        }
     }
 
     private void updateLimbPills(Limb activeLimb) {
@@ -397,6 +612,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupMeasurementsTab() {
+        // Child Gender Toggle
+        if (toggleGroupGender != null) {
+            UserSettings settings = dataManager.getSettings();
+            if ("FEMALE".equalsIgnoreCase(settings.getChildGender())) {
+                toggleGroupGender.check(R.id.btn_gender_female);
+            } else {
+                toggleGroupGender.check(R.id.btn_gender_male);
+            }
+
+            toggleGroupGender.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+                if (isChecked) {
+                    UserSettings s = dataManager.getSettings();
+                    String gender = (checkedId == R.id.btn_gender_female) ? "FEMALE" : "MALE";
+                    s.setChildGender(gender);
+                    dataManager.saveSettings(s);
+                    refreshMeasurementsTab();
+                }
+            });
+        }
+
+        // Child Birth Date Change
+        if (btnChangeBirthdate != null) {
+            btnChangeBirthdate.setOnClickListener(v -> {
+                UserSettings s = dataManager.getSettings();
+                Calendar birthCal = DoseCalculator.parseDateKey(s.getChildBirthDateKey());
+                DatePickerDialog dpd = new DatePickerDialog(
+                        this,
+                        (view, year, month, dayOfMonth) -> {
+                            Calendar chosen = Calendar.getInstance();
+                            chosen.set(year, month, dayOfMonth);
+                            s.setChildBirthDateKey(DoseCalculator.formatDateKey(chosen));
+                            dataManager.saveSettings(s);
+                            refreshMeasurementsTab();
+                        },
+                        birthCal.get(Calendar.YEAR),
+                        birthCal.get(Calendar.MONTH),
+                        birthCal.get(Calendar.DAY_OF_MONTH)
+                );
+                dpd.show();
+            });
+        }
+
+        // Chart Type Toggle (Boy / Kilo)
+        if (toggleChartType != null) {
+            toggleChartType.check(R.id.btn_chart_height);
+            toggleChartType.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+                if (isChecked) {
+                    isPercentileHeightMode = (checkedId == R.id.btn_chart_height);
+                    refreshMeasurementsTab();
+                }
+            });
+        }
+
         rvMeasurements.setLayoutManager(new LinearLayoutManager(this));
         measurementAdapter = new MeasurementAdapter(new MeasurementAdapter.OnMeasurementListener() {
             @Override
@@ -423,13 +691,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refreshMeasurementsTab() {
+        UserSettings settings = dataManager.getSettings();
+        boolean isMale = !"FEMALE".equalsIgnoreCase(settings.getChildGender());
+        String birthDateKey = settings.getChildBirthDateKey();
+
+        // 1. Birth Date & Age
+        Calendar birthCal = DoseCalculator.parseDateKey(birthDateKey);
+        SimpleDateFormat sdf = new SimpleDateFormat("d MMMM yyyy", new Locale("tr", "TR"));
+        if (tvChildBirthdateVal != null) {
+            tvChildBirthdateVal.setText(sdf.format(birthCal.getTime()));
+        }
+
+        float currentAge = DoseCalculator.calculateDecimalAge(birthDateKey, DoseCalculator.formatDateKey(Calendar.getInstance()));
+        int ageYears = (int) currentAge;
+        int ageMonths = (int) ((currentAge - ageYears) * 12);
+        if (tvChildAgeCalculated != null) {
+            tvChildAgeCalculated.setText(String.format(Locale.getDefault(), "%d Yaş %d Ay (%.1f Yaşında)", ageYears, ageMonths, currentAge));
+        }
+
+        // 2. Chart Subtitle
+        if (tvChartReferenceSubtitle != null) {
+            String genderStr = isMale ? "Erkek Çocuk" : "Kız Çocuk";
+            tvChartReferenceSubtitle.setText(genderStr + " • DSÖ & Neyzi Standardı (" + (isPercentileHeightMode ? "Boy Eğrisi" : "Kilo Eğrisi") + ")");
+        }
+
+        // 3. Percentile Chart Data
         List<MeasurementRecord> records = dataManager.getMeasurements();
         measurementAdapter.submitList(records);
-        chartWeight.setData(records);
+
+        if (chartPercentile != null) {
+            chartPercentile.setData(isMale, isPercentileHeightMode, currentAge, birthDateKey, records);
+        }
 
         tvMeasurementCount.setText(records.size() + " kayıt");
         tvNoMeasurements.setVisibility(records.isEmpty() ? View.VISIBLE : View.GONE);
 
+        // 4. Latest Measurement & Percentile Evaluation
         MeasurementRecord latest = dataManager.getLatestMeasurement();
         if (latest != null) {
             tvCurrentBmi.setText(String.format(Locale.US, "%.1f", latest.getBmi()));
@@ -437,12 +734,33 @@ public class MainActivity extends AppCompatActivity {
             tvBmiCategoryPill.setTextColor(latest.getBmiCategoryColorHex());
             tvSummaryWeight.setText(String.format(Locale.US, "%.1f kg", latest.getWeightKg()));
             tvSummaryHeight.setText(String.format(Locale.US, "%.0f cm", latest.getHeightCm()));
+
+            float latestAge = DoseCalculator.calculateDecimalAge(birthDateKey, latest.getDateKey());
+            float targetVal = isPercentileHeightMode ? latest.getHeightCm() : latest.getWeightKg();
+            int p = PercentileCalculator.calculatePercentile(targetVal, latestAge, isMale, isPercentileHeightMode);
+
+            if (tvPercentileStatusText != null) {
+                String unit = isPercentileHeightMode ? "cm" : "kg";
+                String evalText;
+                if (p < 3) evalText = "Düşük Persentil";
+                else if (p < 10) evalText = "Sınırda Düşük";
+                else if (p <= 90) evalText = "İdeal / Normal Gelişim";
+                else if (p <= 97) evalText = "Sınırda Yüksek";
+                else evalText = "Yüksek Persentil";
+
+                tvPercentileStatusText.setText(String.format(Locale.getDefault(),
+                        "Son Ölçüm: %.1f %s • %% %d Persentil (%s)",
+                        targetVal, unit, p, evalText));
+            }
         } else {
             tvCurrentBmi.setText("--");
             tvBmiCategoryPill.setText("Kayıt Yok");
             tvBmiCategoryPill.setTextColor(ContextCompat.getColor(this, R.color.text_secondary_light));
             tvSummaryWeight.setText("-- kg");
             tvSummaryHeight.setText("-- cm");
+            if (tvPercentileStatusText != null) {
+                tvPercentileStatusText.setText("Persentil hesaplaması için lütfen bir boy/kilo kaydı ekleyin.");
+            }
         }
     }
 
@@ -486,8 +804,11 @@ public class MainActivity extends AppCompatActivity {
             dpd.show();
         });
 
-        // Real-time BMI calculation watcher
-        TextWatcher bmiWatcher = new TextWatcher() {
+        // Real-time BMI and Percentile calculation watcher
+        UserSettings settings = dataManager.getSettings();
+        boolean isMale = !"FEMALE".equalsIgnoreCase(settings.getChildGender());
+
+        TextWatcher liveWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override
@@ -496,13 +817,14 @@ public class MainActivity extends AppCompatActivity {
                     float w = Float.parseFloat(etWeight.getText().toString().replace(',', '.'));
                     float h = Float.parseFloat(etHeight.getText().toString().replace(',', '.'));
                     float bmi = MeasurementRecord.calculateBmi(w, h);
+                    float mAge = DoseCalculator.calculateDecimalAge(settings.getChildBirthDateKey(), DoseCalculator.formatDateKey(finalSelectedDate));
+                    int pHeight = PercentileCalculator.calculatePercentile(h, mAge, isMale, true);
+                    int pWeight = PercentileCalculator.calculatePercentile(w, mAge, isMale, false);
+
                     if (bmi > 0) {
-                        String cat;
-                        if (bmi < 18.5f) cat = "Zayıf";
-                        else if (bmi < 25.0f) cat = "Normal";
-                        else if (bmi < 30.0f) cat = "Fazla Kilolu";
-                        else cat = "Obezite";
-                        tvBmiResult.setText(String.format(Locale.US, "%.1f (%s)", bmi, cat));
+                        tvBmiResult.setText(String.format(Locale.getDefault(),
+                                "VKİ: %.1f • Boy: %%%dP • Kilo: %%%dP",
+                                bmi, pHeight, pWeight));
                     } else {
                         tvBmiResult.setText("--");
                     }
@@ -513,8 +835,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {}
         };
-        etWeight.addTextChangedListener(bmiWatcher);
-        etHeight.addTextChangedListener(bmiWatcher);
+        etWeight.addTextChangedListener(liveWatcher);
+        etHeight.addTextChangedListener(liveWatcher);
 
         new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -550,52 +872,6 @@ public class MainActivity extends AppCompatActivity {
         btn.setText("Tarih: " + sdf.format(cal.getTime()));
     }
 
-    private void setupHistoryTab() {
-        rvHistory.setLayoutManager(new LinearLayoutManager(this));
-        historyAdapter = new HistoryAdapter(plan -> {
-            Calendar target = plan.getCalendar();
-            dataManager.setInjectionCompleted(target, !plan.isCompleted());
-            InjectionAppWidgetProvider.updateAllWidgets(this);
-            refreshAllData();
-        });
-        rvHistory.setAdapter(historyAdapter);
-
-        chipgroupHistoryFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            if (checkedIds.contains(R.id.chip_filter_14)) {
-                historyDaysFilter = 14;
-            } else if (checkedIds.contains(R.id.chip_filter_30)) {
-                historyDaysFilter = 30;
-            } else {
-                historyDaysFilter = 90; // All recent
-            }
-            refreshHistoryTab();
-        });
-    }
-
-    private void refreshHistoryTab() {
-        int streak = dataManager.calculateStreak();
-        tvHistoryStreak.setText(streak + " Gün");
-
-        List<InjectionPlan> planList = new ArrayList<>();
-        int totalDone = 0;
-
-        for (int i = 0; i < historyDaysFilter; i++) {
-            Calendar c = Calendar.getInstance();
-            c.add(Calendar.DAY_OF_YEAR, -i);
-            InjectionPlan plan = dataManager.getPlanForDate(c);
-            planList.add(plan);
-            if (plan.isCompleted()) {
-                totalDone++;
-            }
-        }
-
-        tvHistoryTotalDone.setText(String.valueOf(totalDone));
-        int rate = (int) Math.round(((double) totalDone / historyDaysFilter) * 100.0);
-        tvHistoryRate.setText("%" + rate);
-
-        historyAdapter.submitList(planList);
-    }
-
     private void setupSettingsTab() {
         UserSettings settings = dataManager.getSettings();
 
@@ -625,47 +901,66 @@ public class MainActivity extends AppCompatActivity {
             applyTheme(newTheme);
         });
 
-        // Reminder Switch setup
-        switchReminder.setChecked(settings.isReminderEnabled());
-        tvReminderTimeVal.setText(settings.getFormattedTime());
+        // Alarm Master Switch setup
+        if (switchAlarm != null) {
+            switchAlarm.setChecked(settings.isAlarmEnabled());
+            switchAlarm.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                UserSettings s = dataManager.getSettings();
+                s.setAlarmEnabled(isChecked);
+                dataManager.saveSettings(s);
+                AlarmScheduler.scheduleNextAlarm(this);
+                if (switchTodayAlarm != null) switchTodayAlarm.setChecked(isChecked);
+                refreshTodayAlarmCard();
+                String msg = isChecked ? "Enjeksiyon alarmı açıldı." : "Enjeksiyon alarmı kapatıldı.";
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+            });
+        }
 
-        switchReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            UserSettings s = dataManager.getSettings();
-            if (s.isReminderEnabled() == isChecked) {
-                return;
-            }
-            s.setReminderEnabled(isChecked);
-            dataManager.saveSettings(s);
-            NotificationHelper.scheduleDailyReminder(this);
-            String msg = isChecked ? "Günlük hatırlatıcı açıldı." : "Hatırlatıcı kapatıldı.";
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-        });
+        // Alarm Time Picker setup
+        if (tvAlarmTimeVal != null) {
+            tvAlarmTimeVal.setText(settings.getFormattedAlarmTime());
+        }
 
-        // Time Picker setup
-        btnChangeTime.setOnClickListener(v -> {
-            UserSettings s = dataManager.getSettings();
-            TimePickerDialog tpd = new TimePickerDialog(
-                    this,
-                    (view, hourOfDay, minute) -> {
-                        s.setReminderHour(hourOfDay);
-                        s.setReminderMinute(minute);
-                        dataManager.saveSettings(s);
-                        tvReminderTimeVal.setText(s.getFormattedTime());
-                        NotificationHelper.scheduleDailyReminder(this);
-                        Toast.makeText(this, "Hatırlatma saati " + s.getFormattedTime() + " olarak ayarlandı.", Toast.LENGTH_SHORT).show();
-                    },
-                    s.getReminderHour(),
-                    s.getReminderMinute(),
-                    true
-            );
-            tpd.show();
-        });
+        if (btnChangeAlarmTime != null) {
+            btnChangeAlarmTime.setOnClickListener(v -> {
+                UserSettings s = dataManager.getSettings();
+                TimePickerDialog tpd = new TimePickerDialog(
+                        this,
+                        (view, hourOfDay, minute) -> {
+                            s.setAlarmHour(hourOfDay);
+                            s.setAlarmMinute(minute);
+                            dataManager.saveSettings(s);
+                            if (tvAlarmTimeVal != null) tvAlarmTimeVal.setText(s.getFormattedAlarmTime());
+                            AlarmScheduler.scheduleNextAlarm(this);
+                            refreshTodayAlarmCard();
+                            Toast.makeText(this, "Alarm saati " + s.getFormattedAlarmTime() + " olarak ayarlandı.", Toast.LENGTH_SHORT).show();
+                        },
+                        s.getAlarmHour(),
+                        s.getAlarmMinute(),
+                        true
+                );
+                tpd.show();
+            });
+        }
 
-        // Test Notification
-        btnTestNotification.setOnClickListener(v -> {
-            NotificationHelper.showReminderNotification(this);
-            Toast.makeText(this, "Test bildirimi gönderildi.", Toast.LENGTH_SHORT).show();
-        });
+        // Vibration Switch setup
+        if (switchAlarmVibrate != null) {
+            switchAlarmVibrate.setChecked(settings.isAlarmVibrate());
+            switchAlarmVibrate.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                UserSettings s = dataManager.getSettings();
+                s.setAlarmVibrate(isChecked);
+                dataManager.saveSettings(s);
+            });
+        }
+
+        // Test Alarm
+        if (btnTestAlarm != null) {
+            btnTestAlarm.setOnClickListener(v -> {
+                Intent alarmIntent = new Intent(this, AlarmActivity.class);
+                alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(alarmIntent);
+            });
+        }
 
         // Start Date config
         btnChangeStartDate.setOnClickListener(v -> {
@@ -692,18 +987,20 @@ public class MainActivity extends AppCompatActivity {
         btnLoadSample.setOnClickListener(v -> {
             dataManager.loadSampleData();
             InjectionAppWidgetProvider.updateAllWidgets(this);
+            AlarmScheduler.scheduleNextAlarm(this);
             refreshAllData();
-            Toast.makeText(this, "Örnek enjeksiyon ve ölçüm verileri yüklendi!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Örnek çocuk gelişim ve enjeksiyon verileri yüklendi!", Toast.LENGTH_LONG).show();
         });
 
         // Clear Data
         btnClearData.setOnClickListener(v -> {
             new AlertDialog.Builder(this)
                     .setTitle("Verileri Sıfırla")
-                    .setMessage("Tüm geçmiş enjeksiyon ve kilo kayıtları silinecektir. Devam etmek istiyor musunuz?")
+                    .setMessage("Tüm enjeksiyon ve ölçüm kayıtları silinecektir. Devam etmek istiyor musunuz?")
                     .setPositiveButton("Evet, Sil", (dialog, which) -> {
                         dataManager.clearAllData();
                         InjectionAppWidgetProvider.updateAllWidgets(this);
+                        AlarmScheduler.scheduleNextAlarm(this);
                         refreshAllData();
                         Toast.makeText(this, "Tüm kayıtlar temizlendi.", Toast.LENGTH_SHORT).show();
                     })
@@ -714,8 +1011,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void refreshSettingsTab() {
         UserSettings settings = dataManager.getSettings();
-        tvReminderTimeVal.setText(settings.getFormattedTime());
-        switchReminder.setChecked(settings.isReminderEnabled());
+        if (tvAlarmTimeVal != null) tvAlarmTimeVal.setText(settings.getFormattedAlarmTime());
+        if (switchAlarm != null) switchAlarm.setChecked(settings.isAlarmEnabled());
+        if (switchAlarmVibrate != null) switchAlarmVibrate.setChecked(settings.isAlarmVibrate());
 
         Calendar start = DoseCalculator.parseDateKey(settings.getStartDateKey());
         SimpleDateFormat sdf = new SimpleDateFormat("d MMMM yyyy", new Locale("tr", "TR"));
@@ -725,7 +1023,6 @@ public class MainActivity extends AppCompatActivity {
     private void refreshAllData() {
         refreshTodayTab();
         refreshMeasurementsTab();
-        refreshHistoryTab();
         refreshSettingsTab();
     }
 }

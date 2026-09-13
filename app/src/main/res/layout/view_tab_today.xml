@@ -212,6 +212,143 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Next Injection Alarm Card (Alarm Mekanizması) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_next_alarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/surface_light"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/border_light"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_badge_pending">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="Alarm"
+                            android:src="@drawable/ic_bell"
+                            app:tint="#92400E" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/next_alarm_title"
+                            android:textColor="@color/text_primary_light"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_next_alarm_status_desc"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="@string/next_alarm_desc"
+                            android:textColor="@color/text_secondary_light"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_today_alarm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true" />
+                </LinearLayout>
+
+                <!-- Alarm Time and Target Strip -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_limb_inactive"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Alarm Zamanı"
+                            android:textColor="@color/text_secondary_light"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/tv_today_alarm_time_display"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Bugün, 22:00"
+                            android:textColor="@color/primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_today_alarm_target_info"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="0,7 ünite • Sağ Kol"
+                            android:textColor="@color/text_secondary_light"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_change_today_alarm_time"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alarm_change_time"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Quick Test Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_test_alarm_direct"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/alarm_test_btn"
+                    android:textColor="@color/primary"
+                    app:icon="@drawable/ic_syringe"
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/primary" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Body Limb Visual Highlight Section -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -265,37 +402,36 @@
                     android:textColor="@color/text_secondary_light"
                     android:textSize="12sp" />
 
-                <!-- Anatomy Image with Highlight Overlays -->
+                <!-- Anatomy Interactive Animated Body Map -->
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="220dp"
+                    android:layout_height="270dp"
                     android:layout_marginTop="12dp"
-                    android:background="@drawable/bg_limb_inactive">
+                    android:background="@drawable/bg_card_rounded">
 
-                    <ImageView
-                        android:id="@+id/iv_body_anatomy"
+                    <com.example.ui.InteractiveBodyMapView
+                        android:id="@+id/body_map_view"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:contentDescription="Vücut Uzuvları"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/img_body_anatomy" />
+                        android:contentDescription="İnteraktif Vücut Haritası" />
 
                     <!-- Spotlight Badge Overlay in Center-Bottom -->
                     <LinearLayout
+                        android:id="@+id/layout_spotlight_badge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom|center_horizontal"
-                        android:layout_marginBottom="12dp"
+                        android:layout_marginBottom="10dp"
                         android:background="@drawable/bg_hero_gradient"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingHorizontal="14dp"
-                        android:paddingVertical="8dp">
+                        android:paddingVertical="7dp">
 
                         <ImageView
                             android:id="@+id/iv_spotlight_icon"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
                             android:contentDescription="@string/target_limb_label"
                             android:src="@drawable/ic_syringe"
                             app:tint="#FFFFFF" />
@@ -307,19 +443,66 @@
                             android:layout_marginStart="8dp"
                             android:text="Bugün: Sağ Kol"
                             android:textColor="#FFFFFF"
-                            android:textSize="13sp"
+                            android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </FrameLayout>
 
-                <!-- Limb Rotation 4-Item Grid/Pills -->
+                <!-- Interactive Override Action Banner (visible when another limb is inspected) -->
+                <LinearLayout
+                    android:id="@+id/layout_limb_override_action"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_badge_pending"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tv_limb_inspect_hint"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Farklı bir uzuv seçildi."
+                        android:textColor="#78350F"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_set_as_today_limb"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:minHeight="36dp"
+                        android:paddingHorizontal="12dp"
+                        android:text="Bugün Yap"
+                        android:textSize="11sp"
+                        app:cornerRadius="18dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_reset_to_today_limb"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="4dp"
+                        android:minHeight="36dp"
+                        android:paddingHorizontal="8dp"
+                        android:text="Planlanana Dön"
+                        android:textColor="#92400E"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- Limb Rotation 4-Item Grid/Pills with Tap Interaction -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:orientation="horizontal">
 
-                    <!-- Right Arm -->
+                    <!-- Right Arm (Step 1) -->
                     <LinearLayout
                         android:id="@+id/limb_pill_right_arm"
                         android:layout_width="0dp"
@@ -327,6 +510,9 @@
                         android:layout_marginEnd="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_limb_active"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:paddingVertical="10dp">
@@ -334,7 +520,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:contentDescription="Sağ Kol"
+                            android:contentDescription="1. Sağ Kol"
                             android:src="@drawable/ic_arm"
                             app:tint="@color/primary" />
 
@@ -342,13 +528,13 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Sağ Kol"
+                            android:text="1. Sağ Kol"
                             android:textColor="@color/primary"
                             android:textSize="11sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Right Leg -->
+                    <!-- Right Leg (Step 2) -->
                     <LinearLayout
                         android:id="@+id/limb_pill_right_leg"
                         android:layout_width="0dp"
@@ -356,6 +542,9 @@
                         android:layout_marginHorizontal="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_limb_inactive"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:paddingVertical="10dp">
@@ -363,7 +552,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:contentDescription="Sağ Bacak"
+                            android:contentDescription="2. Sağ Bacak"
                             android:src="@drawable/ic_leg"
                             app:tint="@color/text_secondary_light" />
 
@@ -371,12 +560,12 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Sağ Bacak"
+                            android:text="2. Sağ Bacak"
                             android:textColor="@color/text_secondary_light"
                             android:textSize="11sp" />
                     </LinearLayout>
 
-                    <!-- Left Arm -->
+                    <!-- Left Arm (Step 3) -->
                     <LinearLayout
                         android:id="@+id/limb_pill_left_arm"
                         android:layout_width="0dp"
@@ -384,6 +573,9 @@
                         android:layout_marginHorizontal="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_limb_inactive"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:paddingVertical="10dp">
@@ -391,7 +583,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:contentDescription="Sol Kol"
+                            android:contentDescription="3. Sol Kol"
                             android:src="@drawable/ic_arm"
                             app:tint="@color/text_secondary_light" />
 
@@ -399,12 +591,12 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Sol Kol"
+                            android:text="3. Sol Kol"
                             android:textColor="@color/text_secondary_light"
                             android:textSize="11sp" />
                     </LinearLayout>
 
-                    <!-- Left Leg -->
+                    <!-- Left Leg (Step 4) -->
                     <LinearLayout
                         android:id="@+id/limb_pill_left_leg"
                         android:layout_width="0dp"
@@ -412,6 +604,9 @@
                         android:layout_marginStart="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_limb_inactive"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:paddingVertical="10dp">
@@ -419,7 +614,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:contentDescription="Sol Bacak"
+                            android:contentDescription="4. Sol Bacak"
                             android:src="@drawable/ic_leg"
                             app:tint="@color/text_secondary_light" />
 
@@ -427,7 +622,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Sol Bacak"
+                            android:text="4. Sol Bacak"
                             android:textColor="@color/text_secondary_light"
                             android:textSize="11sp" />
                     </LinearLayout>

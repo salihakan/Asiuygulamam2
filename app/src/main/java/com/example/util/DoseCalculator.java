@@ -65,4 +65,16 @@ public class DoseCalculator {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         return sdf.format(cal.getTime());
     }
+
+    public static float calculateDecimalAge(String birthDateKey, String targetDateKey) {
+        try {
+            Calendar birth = parseDateKey(birthDateKey);
+            Calendar target = parseDateKey(targetDateKey);
+            long diffMillis = target.getTimeInMillis() - birth.getTimeInMillis();
+            float diffYears = (float) diffMillis / (365.25f * 24f * 60f * 60f * 1000f);
+            return Math.max(0.1f, diffYears);
+        } catch (Exception e) {
+            return 7.0f;
+        }
+    }
 }

@@ -165,6 +165,29 @@ public class DataManager {
         return getPlanForDate(cal);
     }
 
+    public void setTodayLimbOverride(Limb newLimb) {
+        if (newLimb == null) return;
+        UserSettings settings = getSettings();
+        Calendar today = DoseCalculator.normalizeToMidnight(Calendar.getInstance());
+        Calendar startCal = DoseCalculator.parseDateKey(settings.getStartDateKey());
+        long diffMillis = today.getTimeInMillis() - startCal.getTimeInMillis();
+        long diffDays = Math.round((double) diffMillis / (24.0 * 60 * 60 * 1000));
+        int newStartIndex = (int) (((newLimb.getIndex() - diffDays) % 4 + 4) % 4);
+        settings.setStartLimbIndex(newStartIndex);
+        saveSettings(settings);
+
+        String todayKey = DoseCalculator.formatDateKey(today);
+        List<InjectionRecord> list = getInjectionRecords();
+        for (InjectionRecord r : list) {
+            if (r.getDateKey().equals(todayKey)) {
+                r.setLimbIndex(newLimb.getIndex());
+                r.setLimbName(newLimb.getDefaultName());
+                saveInjectionRecords(list);
+                break;
+            }
+        }
+    }
+
     public int calculateStreak() {
         List<InjectionRecord> records = getInjectionRecords();
         Map<String, Boolean> statusMap = new HashMap<>();
@@ -256,6 +279,10 @@ public class DataManager {
         cal.add(Calendar.DAY_OF_YEAR, -10);
 
         UserSettings settings = getSettings();
+        settings.setChildGender("MALE");
+        settings.setChildBirthDateKey("2019-05-15");
+        saveSettings(settings);
+
         Calendar startCal = DoseCalculator.parseDateKey(settings.getStartDateKey());
 
         List<InjectionRecord> records = new ArrayList<>();
@@ -279,15 +306,17 @@ public class DataManager {
         saveInjectionRecords(records);
 
         List<MeasurementRecord> measurements = new ArrayList<>();
-        float[] sampleWeights = {74.2f, 73.8f, 73.2f, 72.5f, 72.1f};
+        // Realistic progression for a ~7-year old child over the past year (ideal growth curve)
+        float[] sampleWeights = {21.0f, 21.8f, 22.5f, 23.4f, 24.2f};
+        float[] sampleHeights = {118.0f, 119.5f, 121.0f, 122.5f, 124.0f};
         for (int i = 0; i < sampleWeights.length; i++) {
             Calendar mc = Calendar.getInstance();
-            mc.add(Calendar.DAY_OF_YEAR, -((sampleWeights.length - 1 - i) * 6));
+            mc.add(Calendar.DAY_OF_YEAR, -((sampleWeights.length - 1 - i) * 60)); // every 2 months
             measurements.add(new MeasurementRecord(
                     UUID.randomUUID().toString(),
                     DoseCalculator.formatDateKey(mc),
                     sampleWeights[i],
-                    176f,
+                    sampleHeights[i],
                     mc.getTimeInMillis()
             ));
         }

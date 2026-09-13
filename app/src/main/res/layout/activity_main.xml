@@ -103,13 +103,7 @@
             layout="@layout/view_tab_measurements"
             android:visibility="gone" />
 
-        <!-- Tab 2: History -->
-        <include
-            android:id="@+id/tab_view_history"
-            layout="@layout/view_tab_history"
-            android:visibility="gone" />
-
-        <!-- Tab 3: Settings -->
+        <!-- Tab 2: Settings -->
         <include
             android:id="@+id/tab_view_settings"
             layout="@layout/view_tab_settings"

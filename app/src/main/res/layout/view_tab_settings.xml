@@ -94,7 +94,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Notification Reminder Section -->
+        <!-- Alarm & Reminder Section -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -111,9 +111,27 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/alarm_settings_section"
+                    android:textColor="@color/text_primary_light"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Enjeksiyon zamanında sesli ve tam ekran alarm çalar"
+                    android:textColor="@color/text_secondary_light"
+                    android:textSize="12sp" />
+
+                <!-- Alarm Master Switch -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -126,30 +144,30 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/notification_enable"
+                            android:text="@string/alarm_enable"
                             android:textColor="@color/text_primary_light"
-                            android:textSize="16sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="@string/notification_enable_desc"
+                            android:text="@string/alarm_enable_desc"
                             android:textColor="@color/text_secondary_light"
                             android:textSize="12sp" />
                     </LinearLayout>
 
                     <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switch_reminder"
+                        android:id="@+id/switch_alarm"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checked="true" />
                 </LinearLayout>
 
-                <!-- Time Picker Row -->
+                <!-- Alarm Time Picker Row -->
                 <LinearLayout
-                    android:id="@+id/layout_reminder_time"
+                    android:id="@+id/layout_alarm_time"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
@@ -175,12 +193,12 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/notification_time"
+                            android:text="@string/alarm_time"
                             android:textColor="@color/text_secondary_light"
                             android:textSize="11sp" />
 
                         <TextView
-                            android:id="@+id/tv_reminder_time_val"
+                            android:id="@+id/tv_alarm_time_val"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="22:00"
@@ -190,22 +208,58 @@
                     </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_change_time"
+                        android:id="@+id/btn_change_alarm_time"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Değiştir" />
                 </LinearLayout>
 
-                <!-- Test Notification Button -->
+                <!-- Vibration Switch -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/alarm_vibrate"
+                            android:textColor="@color/text_primary_light"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Alarm çalarken cihaz titrer"
+                            android:textColor="@color/text_secondary_light"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_alarm_vibrate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true" />
+                </LinearLayout>
+
+                <!-- Test Alarm Button -->
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_test_notification"
+                    android:id="@+id/btn_test_alarm"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/notification_test_btn"
-                    app:icon="@drawable/ic_bell"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/alarm_test_btn"
+                    app:icon="@drawable/ic_syringe"
                     app:iconGravity="textStart"
                     app:iconTint="@color/primary" />
             </LinearLayout>
